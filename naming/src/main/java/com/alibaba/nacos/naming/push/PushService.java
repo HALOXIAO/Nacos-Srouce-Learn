@@ -115,7 +115,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-    
+
+    //TODO 服务端推送给Client
     @Override
     public void onApplicationEvent(ServiceChangeEvent event) {
         Service service = event.getService();

@@ -53,6 +53,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class HostReactor implements Closeable {
 
+    //默认更新延迟
     private static final long DEFAULT_DELAY = 1000L;
 
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
@@ -383,17 +384,17 @@ public class HostReactor implements Closeable {
             this.serviceName = serviceName;
             this.clusters = clusters;
         }
-        //获取集群最新消息
+
+        //获取服务实例信息
         @Override
         public void run() {
             long delayTime = -1;
 
             try {
-                //
+                //获取本地缓存的目标服务的所有实例信息
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
-
                 if (serviceObj == null) {
-
+                    //获取服务实例实例信息,更新缓存
                     updateServiceNow(serviceName, clusters);
                     delayTime = DEFAULT_DELAY;
                     return;
