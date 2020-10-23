@@ -80,7 +80,7 @@ public class BeatReactor implements Closeable {
      * @param beatInfo    beat information
      */
 
-
+    //服务注册将服务心跳信息加入心跳反应器
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
 
@@ -91,6 +91,7 @@ public class BeatReactor implements Closeable {
             existBeat.setStopped(true);
         }
         dom2Beat.put(key, beatInfo);
+        //大约5s 发送一次心跳
         executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
@@ -162,7 +163,7 @@ public class BeatReactor implements Closeable {
             this.beatInfo = beatInfo;
         }
 
-        // Beat任务
+        // Beat任务（发送心跳）
         @Override
         public void run() {
             if (beatInfo.isStopped()) {
@@ -173,13 +174,15 @@ public class BeatReactor implements Closeable {
             try {
                 //发送心跳
                 JsonNode result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
+                //服务端对Beat间隔的控制
                 long interval = result.get("clientBeatInterval").asLong();
+                //lighBeatEnabled 表示这次Beat是否为轻量级Beat（即是否携带beat数据，默认只有第一次时才需要携带，第二次往后都是lighBeat）
                 boolean lightBeatEnabled = false;
                 if (result.has(CommonParams.LIGHT_BEAT_ENABLED)) {
                     lightBeatEnabled = result.get(CommonParams.LIGHT_BEAT_ENABLED).asBoolean();
                 }
                 BeatReactor.this.lightBeatEnabled = lightBeatEnabled;
-                //下一次心跳时间
+                //下一次心跳时间，默认5s
                 if (interval > 0) {
                     nextTime = interval;
                 }
@@ -189,7 +192,9 @@ public class BeatReactor implements Closeable {
                 }
                 //如果是404
                 if (code == NamingResponseCode.RESOURCE_NOT_FOUND) {
-                    //Instance实例
+                    System.out.println("404");
+                    System.out.println(result.toString());
+                    //需要注册的实例
                     Instance instance = new Instance();
                     instance.setPort(beatInfo.getPort());
                     instance.setIp(beatInfo.getIp());
@@ -200,13 +205,14 @@ public class BeatReactor implements Closeable {
                     instance.setInstanceId(instance.getInstanceId());
                     instance.setEphemeral(true);
                     try {
-                        //因为404（可能被移除），所以注册下实例
+                        //重新注册下实例
                         serverProxy.registerService(beatInfo.getServiceName(),
                             NamingUtils.getGroupName(beatInfo.getServiceName()), instance);
                     } catch (Exception ignore) {
 
                     }
                 }
+                System.out.println("200");
             } catch (NacosException ex) {
                 NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, code: {}, msg: {}",
                     JacksonUtils.toJson(beatInfo), ex.getErrCode(), ex.getErrMsg());

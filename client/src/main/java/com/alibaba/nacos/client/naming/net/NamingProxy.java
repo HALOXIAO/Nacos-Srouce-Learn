@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.net;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
@@ -420,12 +421,14 @@ public class NamingProxy implements Closeable {
      * @throws NacosException nacos exception
      */
     public JsonNode sendBeat(BeatInfo beatInfo, boolean lightBeatEnabled) throws NacosException {
+        System.out.println(Thread.currentThread().getName());
         if (NAMING_LOGGER.isDebugEnabled()) {
             NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
         }
 
         Map<String, String> params = new HashMap<String, String>(8);
         Map<String, String> bodyMap = new HashMap<String, String>(2);
+        //不是lightBeat就需要将BeatInfo的信息都一起发送到server
         if (!lightBeatEnabled) {
             bodyMap.put("beat", JacksonUtils.toJson(beatInfo));
         }

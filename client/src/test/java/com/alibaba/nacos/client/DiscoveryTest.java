@@ -1,14 +1,16 @@
 package com.alibaba.nacos.client;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
+import com.alibaba.nacos.client.naming.beat.BeatReactor;
+import com.fasterxml.jackson.core.io.SegmentedStringWriter;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class DiscoveryTest {
 
@@ -19,13 +21,26 @@ public class DiscoveryTest {
     private final Integer serverPort = 8081;
 
     @Test
-    public void content() throws NacosException {
+    public void content() throws NacosException, InterruptedException {
+
+
         NacosFactory factory = new NacosFactory();
         NacosNamingService namingService = (NacosNamingService) factory.createNamingService(address);
 //        namingService.registerInstance(serviceName, groupName, ip, serverPort);
-        List<String> serverList = namingService.serverProxy.getServerListFromEndpoint();
-        System.out.println(serverList.toString());
+//        List<String> serverList = namingService.serverProxy.getServerListFromEndpoint();
+//        System.out.println(serverList.toString());
+        BeatReactor reactor = namingService.getBeatReactor();
+        BeatInfo beatInfo = new BeatInfo();
+        beatInfo.setIp(ip);
+        beatInfo.setPort(serverPort);
+        beatInfo.setServiceName(serviceName);
+        String str = JSON.toJSONString(beatInfo);
+//        System.out.println(str);
+        reactor.addBeatInfo(serviceName, beatInfo);
     }
+
+
+
 
     public Properties init() {
         Properties properties = new Properties();
