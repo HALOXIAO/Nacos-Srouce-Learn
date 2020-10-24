@@ -32,6 +32,7 @@ import java.util.concurrent.ThreadFactory;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
+//TODO 接收请求
 /**
  * Push receiver.
  *
@@ -55,6 +56,7 @@ public class PushReceiver implements Runnable, Closeable {
         try {
             this.hostReactor = hostReactor;
             this.udpSocket = new DatagramSocket();
+            //防止产生锁的冲突
             this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
@@ -79,9 +81,9 @@ public class PushReceiver implements Runnable, Closeable {
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                
+
                 udpSocket.receive(packet);
-                
+
                 String json = new String(IoUtils.tryDecompress(packet.getData()), UTF_8).trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
                 

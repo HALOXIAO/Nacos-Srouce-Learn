@@ -61,6 +61,9 @@ public class NacosNamingService implements NamingService {
 
     private String serverList;
 
+    /**
+     * 默认为 ${user}/nacos/naming
+     * */
     private String cacheDir;
 
     private String logName;
@@ -290,9 +293,11 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
+            //从本地获取实例（默认有1s左右的延迟）
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
                 StringUtils.join(clusters, ","));
         } else {
+            //直接从服务端获取全部实例
             serviceInfo = hostReactor
                 .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
                     StringUtils.join(clusters, ","));

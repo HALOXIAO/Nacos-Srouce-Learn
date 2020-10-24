@@ -26,17 +26,18 @@ public class DiscoveryTest {
 
         NacosFactory factory = new NacosFactory();
         NacosNamingService namingService = (NacosNamingService) factory.createNamingService(address);
-//        namingService.registerInstance(serviceName, groupName, ip, serverPort);
+        namingService.registerInstance(serviceName, groupName, ip, serverPort);
+        Thread.sleep(10000000);
 //        List<String> serverList = namingService.serverProxy.getServerListFromEndpoint();
 //        System.out.println(serverList.toString());
-        BeatReactor reactor = namingService.getBeatReactor();
-        BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setIp(ip);
-        beatInfo.setPort(serverPort);
-        beatInfo.setServiceName(serviceName);
-        String str = JSON.toJSONString(beatInfo);
+//        BeatReactor reactor = namingService.getBeatReactor();
+//        BeatInfo beatInfo = new BeatInfo();
+//        beatInfo.setIp(ip);
+//        beatInfo.setPort(serverPort);
+//        beatInfo.setServiceName(serviceName);
+//        String str = JSON.toJSONString(beatInfo);
 //        System.out.println(str);
-        reactor.addBeatInfo(serviceName, beatInfo);
+//        reactor.addBeatInfo(serviceName, beatInfo);
     }
 
 

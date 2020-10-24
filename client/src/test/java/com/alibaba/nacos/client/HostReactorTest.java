@@ -3,8 +3,11 @@ package com.alibaba.nacos.client;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import org.junit.Test;
+
+import java.util.List;
 
 public class HostReactorTest {
 
@@ -18,8 +21,9 @@ public class HostReactorTest {
 
     @Test
     public void context() throws NacosException {
-        NacosNamingService namingService = (NacosNamingService) NacosFactory.createNamingService(serviceName);
-//        namingService.getAllInstances()
+        NacosNamingService namingService = (NacosNamingService) NacosFactory.createNamingService(address);
+        List<Instance> result =  namingService.getAllInstances(serviceName);
+        System.out.println(result.toString());
     }
 
 }

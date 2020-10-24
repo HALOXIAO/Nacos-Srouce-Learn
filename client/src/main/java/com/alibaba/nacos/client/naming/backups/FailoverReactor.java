@@ -60,6 +60,7 @@ public class FailoverReactor implements Closeable {
     
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
+        //存放故障转移服务实例的位置
         this.failoverDir = cacheDir + "/failover";
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -73,9 +74,13 @@ public class FailoverReactor implements Closeable {
         });
         this.init();
     }
-    
+
+
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    
+
+    /**
+     * 用于判断是否处于故障切换状态
+     * */
     private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
     
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
@@ -84,9 +89,10 @@ public class FailoverReactor implements Closeable {
      * Init.
      */
     public void init() {
-        
+        //5s
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-        
+
+        //24h
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
         
         // backup file on startup if failover directory is empty.
@@ -133,35 +139,38 @@ public class FailoverReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
-    
+
     class SwitchRefresher implements Runnable {
-        
+
         long lastModifiedMillis = 0L;
-        
+        //定期做容灾备份，查看缓存目录下的/failover/00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00文件，看是否有改变，
+        // 有改变就要设置相应的属性来表示是否开启故障转移模式
         @Override
         public void run() {
-            try {
+            try {//是否有故障转移文件
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
                 if (!switchFile.exists()) {
                     switchParams.put("failover-mode", "false");
                     NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }
-                
+                //上次修改时间
                 long modified = switchFile.lastModified();
-                
+                //如果进行了改变
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
+                    ////获取文件内容
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                             Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         String[] lines = failover.split(DiskCache.getLineSeparator());
-                        
+
                         for (String line : lines) {
                             String line1 = line.trim();
                             if ("1".equals(line1)) {
                                 switchParams.put("failover-mode", "true");
                                 NAMING_LOGGER.info("failover-mode is on");
+                                //将磁盘中的备份文件复制到内存中
                                 new FailoverFileReader().run();
                             } else if ("0".equals(line1)) {
                                 switchParams.put("failover-mode", "false");
@@ -178,9 +187,9 @@ public class FailoverReactor implements Closeable {
             }
         }
     }
-    
+
     class FailoverFileReader implements Runnable {
-        
+        //读取磁盘中的备份资料，并将其写入内存的缓存中
         @Override
         public void run() {
             Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
@@ -202,7 +211,7 @@ public class FailoverReactor implements Closeable {
                     if (!file.isFile()) {
                         continue;
                     }
-                    
+
                     if (file.getName().equals(UtilAndComs.FAILOVER_SWITCH)) {
                         continue;
                     }
@@ -247,7 +256,9 @@ public class FailoverReactor implements Closeable {
             }
         }
     }
-    
+
+
+    //定时将内存中的服务实例缓存持久化到硬盘中
     class DiskFileWriter extends TimerTask {
         
         @Override

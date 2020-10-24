@@ -60,6 +60,7 @@ public class HostReactor implements Closeable {
 
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
+    //内存的服务实例缓存
     private final Map<String, ServiceInfo> serviceInfoMap;
 
     private final Map<String, Object> updatingMap;
@@ -127,6 +128,10 @@ public class HostReactor implements Closeable {
      * @param json service json
      * @return service info
      */
+
+    /**
+     * 更新服务实例
+     * */
     public ServiceInfo processServiceJson(String json) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
@@ -146,31 +151,37 @@ public class HostReactor implements Closeable {
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
 
+
+            //旧的服务地址
             Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
             for (Instance host : oldService.getHosts()) {
+                //inetAddr()为：ip+":"+port 的形式
                 oldHostMap.put(host.toInetAddr(), host);
             }
-
+            //新的服务地址
             Map<String, Instance> newHostMap = new HashMap<String, Instance>(serviceInfo.getHosts().size());
             for (Instance host : serviceInfo.getHosts()) {
                 newHostMap.put(host.toInetAddr(), host);
             }
-
+            //存放修改过的服务
             Set<Instance> modHosts = new HashSet<Instance>();
+            //存放全新的服务
             Set<Instance> newHosts = new HashSet<Instance>();
+            //存放被移除的服务
             Set<Instance> remvHosts = new HashSet<Instance>();
 
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                 newHostMap.entrySet());
+            //对新的服务地址做处理
             for (Map.Entry<String, Instance> entry : newServiceHosts) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
-                if (oldHostMap.containsKey(key) && !StringUtils
-                    .equals(host.toString(), oldHostMap.get(key).toString())) {
+                //当某个实例也在oldHostMap中存在，且更新过（和oldHostMap中的数据不同）时，加入modHosts
+                if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
                     modHosts.add(host);
                     continue;
                 }
-
+                //添加newHosts
                 if (!oldHostMap.containsKey(key)) {
                     newHosts.add(host);
                 }
@@ -182,7 +193,7 @@ public class HostReactor implements Closeable {
                 if (newHostMap.containsKey(key)) {
                     continue;
                 }
-
+                //添加remvHosts
                 if (!newHostMap.containsKey(key)) {
                     remvHosts.add(host);
                 }
@@ -211,7 +222,9 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
+                //进行事件分发
                 eventDispatcher.serviceChanged(serviceInfo);
+                //写入磁盘缓存
                 DiskCache.write(serviceInfo, cacheDir);
             }
 
@@ -224,7 +237,7 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
         }
-
+        //监控
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
         if (changed) {
@@ -238,8 +251,10 @@ public class HostReactor implements Closeable {
     private void updateBeatInfo(Set<Instance> modHosts) {
         for (Instance instance : modHosts) {
             String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+            //如果确实存在此实例，且为临时实例
             if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
                 BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                //因为临时实例超时是会自动销毁的，所以需要Beat（前面进行的操作如果费时，那么这一系列临时实例容易被销毁）
                 beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
             }
         }
@@ -264,12 +279,14 @@ public class HostReactor implements Closeable {
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
 
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
+//        key:GroupName+@@+ServiceName
         String key = ServiceInfo.getKey(serviceName, clusters);
-        //容灾阶段，
+        //是否开启了容灾备份
         if (failoverReactor.isFailoverSwitch()) {
+            //返回容灾备份中的数据
             return failoverReactor.getService(key);
         }
-
+        //在本地内存中查找
         ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
 
         if (null == serviceObj) {
