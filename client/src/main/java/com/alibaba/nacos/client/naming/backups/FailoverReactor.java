@@ -75,7 +75,9 @@ public class FailoverReactor implements Closeable {
         this.init();
     }
 
-
+    /**
+     *
+     * */
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
 
     /**
@@ -108,6 +110,7 @@ public class FailoverReactor implements Closeable {
                     
                     File[] files = cacheDir.listFiles();
                     if (files == null || files.length <= 0) {
+                        //将内存中的服务实例(HostReactor存储的)缓存持久化到硬盘中
                         new DiskFileWriter().run();
                     }
                 } catch (Throwable e) {
@@ -149,6 +152,7 @@ public class FailoverReactor implements Closeable {
         public void run() {
             try {//是否有故障转移文件
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
+
                 if (!switchFile.exists()) {
                     switchParams.put("failover-mode", "false");
                     NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
@@ -170,7 +174,7 @@ public class FailoverReactor implements Closeable {
                             if ("1".equals(line1)) {
                                 switchParams.put("failover-mode", "true");
                                 NAMING_LOGGER.info("failover-mode is on");
-                                //将磁盘中的备份文件复制到内存中
+                                //将磁盘中的备份文件读取到内存中
                                 new FailoverFileReader().run();
                             } else if ("0".equals(line1)) {
                                 switchParams.put("failover-mode", "false");
@@ -258,11 +262,12 @@ public class FailoverReactor implements Closeable {
     }
 
 
-    //定时将内存中的服务实例缓存持久化到硬盘中
+    //定时将内存中的服务实例(HostReactor存储的)缓存持久化到硬盘中
     class DiskFileWriter extends TimerTask {
-        
+        //00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00
         @Override
         public void run() {
+            //获取内存中的服务实例缓存
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
@@ -294,3 +299,4 @@ public class FailoverReactor implements Closeable {
         return serviceInfo;
     }
 }
+

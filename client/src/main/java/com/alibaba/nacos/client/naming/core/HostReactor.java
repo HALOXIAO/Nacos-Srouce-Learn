@@ -277,13 +277,12 @@ public class HostReactor implements Closeable {
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
-
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
 //        key:GroupName+@@+ServiceName
         String key = ServiceInfo.getKey(serviceName, clusters);
         //是否开启了容灾备份
         if (failoverReactor.isFailoverSwitch()) {
-            //返回容灾备份中的数据
+            //返回容灾备份中的内存数据
             return failoverReactor.getService(key);
         }
         //在本地内存中查找
@@ -293,8 +292,8 @@ public class HostReactor implements Closeable {
             serviceObj = new ServiceInfo(serviceName, clusters);
             //
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
-
             updatingMap.put(serviceName, new Object());
+            //立刻更新服务缓存
             updateServiceNow(serviceName, clusters);
             updatingMap.remove(serviceName);
 
@@ -312,7 +311,7 @@ public class HostReactor implements Closeable {
                 }
             }
         }
-
+        //
         scheduleUpdateIfAbsent(serviceName, clusters);
 
         return serviceInfoMap.get(serviceObj.getKey());
