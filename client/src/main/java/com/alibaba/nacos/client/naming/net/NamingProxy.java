@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.net;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
@@ -125,6 +124,9 @@ public class NamingProxy implements Closeable {
         this.initRefreshTask();
     }
 
+    /**
+     * 初始化ServerList刷新任务
+     * */
     private void initRefreshTask() {
 
         this.executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
@@ -397,7 +399,7 @@ public class NamingProxy implements Closeable {
      * @return instance list
      * @throws NacosException nacos exception
      */
-    //
+
     public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
         throws NacosException {
 
@@ -532,7 +534,7 @@ public class NamingProxy implements Closeable {
 
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
-            //按次序向每个服务器发送注册实例信息，有服务器正常响应时推出，无服务响应后
+            //按次序向每个服务器发送注册实例信息,直到遍历完服务或者有服务正常响应
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);
                 try {

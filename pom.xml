@@ -1017,6 +1017,18 @@
         </dependencies>
     </dependencyManagement>
 
+
+    <repositories>
+
+        <repository>
+            <id>alimaven</id>
+            <name>aliyun maven</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        </repository>
+
+    </repositories>
+
+
     <distributionManagement>
         <snapshotRepository>
             <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->

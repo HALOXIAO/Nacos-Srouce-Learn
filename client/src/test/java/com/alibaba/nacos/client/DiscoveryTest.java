@@ -1,16 +1,12 @@
 package com.alibaba.nacos.client;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.NacosNamingService;
-import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.fasterxml.jackson.core.io.SegmentedStringWriter;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Properties;
 
 public class DiscoveryTest {
 
@@ -39,8 +35,6 @@ public class DiscoveryTest {
 //        System.out.println(str);
 //        reactor.addBeatInfo(serviceName, beatInfo);
     }
-
-
 
 
     public Properties init() {

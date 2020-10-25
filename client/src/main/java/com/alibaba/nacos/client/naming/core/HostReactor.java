@@ -102,7 +102,7 @@ public class HostReactor implements Closeable {
         this.beatReactor = beatReactor;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
-        //是否从磁盘读取缓存
+        //是否从磁盘读取缓存,默认为false
         if (loadCacheAtStart) {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         } else {
@@ -278,19 +278,17 @@ public class HostReactor implements Closeable {
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
-//        key:GroupName+@@+ServiceName
+        //key:GroupName+@@+ServiceName
         String key = ServiceInfo.getKey(serviceName, clusters);
         //是否开启了容灾备份
         if (failoverReactor.isFailoverSwitch()) {
             //返回容灾备份中的内存数据
             return failoverReactor.getService(key);
         }
-        //在本地内存中查找
+        //在本地内存中获取
         ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
-
         if (null == serviceObj) {
             serviceObj = new ServiceInfo(serviceName, clusters);
-            //
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
             updatingMap.put(serviceName, new Object());
             //立刻更新服务缓存
@@ -311,9 +309,8 @@ public class HostReactor implements Closeable {
                 }
             }
         }
-        //
+        //如果futureMap中不存在目标服务实例，则将其放定时服务中获取服务实例
         scheduleUpdateIfAbsent(serviceName, clusters);
-
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
@@ -344,7 +341,7 @@ public class HostReactor implements Closeable {
      * @param serviceName service name
      * @param clusters    clusters
      */
-    //更新
+    //更新服务实例
     public void updateServiceNow(String serviceName, String clusters) {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
@@ -409,13 +406,14 @@ public class HostReactor implements Closeable {
             try {
                 //获取本地缓存的目标服务的所有实例信息
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
+                //如果不存在
                 if (serviceObj == null) {
                     //获取服务实例实例信息,更新缓存
                     updateServiceNow(serviceName, clusters);
                     delayTime = DEFAULT_DELAY;
                     return;
                 }
-
+                    //如果目标服务的最后更新
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     updateServiceNow(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
@@ -433,7 +431,6 @@ public class HostReactor implements Closeable {
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
-
                 delayTime = serviceObj.getCacheMillis();
 
             } catch (Throwable e) {
