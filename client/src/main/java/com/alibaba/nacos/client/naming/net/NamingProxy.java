@@ -86,14 +86,14 @@ public class NamingProxy implements Closeable {
     private int serverPort = DEFAULT_SERVER_PORT;
 
     private final String namespaceId;
-
+    //server集群扩缩容信息获取
     private final String endpoint;
 
     //当serverList size为1时，nacosDeomain会被设置为服务ip地址
     private String nacosDomain;
 
     private List<String> serverList;
-
+    //扩缩容后服务地址
     private List<String> serversFromEndpoint = new ArrayList<String>();
 
     private final SecurityProxy securityProxy;

@@ -28,10 +28,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * ServiceInfo.
- *
- * @author nkorange
- */
+ * 服务信息
+ * */
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
     

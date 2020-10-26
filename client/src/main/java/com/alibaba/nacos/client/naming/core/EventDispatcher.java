@@ -158,6 +158,7 @@ public class EventDispatcher implements Closeable {
 
                 ServiceInfo serviceInfo = null;
                 try {
+                    //5分钟执行一次
                     serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
@@ -169,17 +170,19 @@ public class EventDispatcher implements Closeable {
                 try {
                     List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
 
+
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
                             listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
-                                    serviceInfo.getClusters(), hosts));
+                                serviceInfo.getClusters(), hosts));
+
                         }
                     }
 
                 } catch (Exception e) {
                     NAMING_LOGGER.error("[NA] notify error for service: " + serviceInfo.getName() + ", clusters: "
-                            + serviceInfo.getClusters(), e);
+                        + serviceInfo.getClusters(), e);
                 }
             }
         }

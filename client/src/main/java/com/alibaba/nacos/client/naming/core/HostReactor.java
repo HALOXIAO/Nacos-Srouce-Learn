@@ -131,6 +131,8 @@ public class HostReactor implements Closeable {
 
     /**
      * 更新服务实例
+     *
+     * param:ServiceInfo 服务信息
      * */
     public ServiceInfo processServiceJson(String json) {
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
@@ -169,7 +171,6 @@ public class HostReactor implements Closeable {
             Set<Instance> newHosts = new HashSet<Instance>();
             //存放被移除的服务
             Set<Instance> remvHosts = new HashSet<Instance>();
-
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                 newHostMap.entrySet());
             //对新的服务地址做处理
@@ -222,7 +223,7 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
-                //进行事件分发
+                //
                 eventDispatcher.serviceChanged(serviceInfo);
                 //写入磁盘缓存
                 DiskCache.write(serviceInfo, cacheDir);
@@ -406,20 +407,21 @@ public class HostReactor implements Closeable {
             try {
                 //获取本地缓存的目标服务的所有实例信息
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
-                //如果不存在
+                //如果目标服务不存在
                 if (serviceObj == null) {
                     //获取服务实例实例信息,更新缓存
                     updateServiceNow(serviceName, clusters);
                     delayTime = DEFAULT_DELAY;
                     return;
                 }
-                    //如果目标服务的最后更新
+                    //判断是否被server推送了信息
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     updateServiceNow(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
                     // since the push data may be different from pull through force push
+                    //如果服务名已经被推送了更新，我们就不应该覆盖它，因为强制推送的信息可能和拉取的信息不同
                     refreshOnly(serviceName, clusters);
                 }
 

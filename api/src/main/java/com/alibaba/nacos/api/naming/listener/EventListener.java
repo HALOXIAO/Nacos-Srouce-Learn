@@ -21,6 +21,9 @@ package com.alibaba.nacos.api.naming.listener;
  *
  * @author Nacos
  */
+/**
+ * 拓展点：需要自己实现
+ * */
 public interface EventListener {
     
     /**

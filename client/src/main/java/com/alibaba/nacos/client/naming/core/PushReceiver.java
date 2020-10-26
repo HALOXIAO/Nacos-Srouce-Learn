@@ -56,7 +56,6 @@ public class PushReceiver implements Runnable, Closeable {
         try {
             this.hostReactor = hostReactor;
             this.udpSocket = new DatagramSocket();
-            //防止产生锁的冲突
             this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
@@ -66,7 +65,6 @@ public class PushReceiver implements Runnable, Closeable {
                     return thread;
                 }
             });
-            
             this.executorService.execute(this);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
@@ -75,13 +73,14 @@ public class PushReceiver implements Runnable, Closeable {
     
     @Override
     public void run() {
+        //接收server push的udp数据包
         while (!closed) {
             try {
-                
+
                 // byte[] is initialized with 0 full filled by default
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
+                //阻塞操作
                 udpSocket.receive(packet);
 
                 String json = new String(IoUtils.tryDecompress(packet.getData()), UTF_8).trim();
@@ -90,6 +89,7 @@ public class PushReceiver implements Runnable, Closeable {
                 PushPacket pushPacket = JacksonUtils.toObj(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
+                    //更新一波服务信息先
                     hostReactor.processServiceJson(pushPacket.data);
                     
                     // send ack to server

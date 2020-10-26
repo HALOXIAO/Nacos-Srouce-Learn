@@ -163,12 +163,11 @@ public class FailoverReactor implements Closeable {
                 //如果进行了改变
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
-                    ////获取文件内容
+                    //获取文件内容
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                             Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         String[] lines = failover.split(DiskCache.getLineSeparator());
-
                         for (String line : lines) {
                             String line1 = line.trim();
                             if ("1".equals(line1)) {
