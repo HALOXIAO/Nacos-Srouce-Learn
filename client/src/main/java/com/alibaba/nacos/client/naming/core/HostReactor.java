@@ -346,8 +346,10 @@ public class HostReactor implements Closeable {
     public void updateServiceNow(String serviceName, String clusters) {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
+            //获取服务的信息，并且发送自己接收服务端push的udp端口
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUdpPort(), false);
 
+            //refreshOnly不存在这个方法调用
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJson(result);
             }
