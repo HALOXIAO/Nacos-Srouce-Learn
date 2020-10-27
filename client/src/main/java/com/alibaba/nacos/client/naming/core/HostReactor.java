@@ -135,7 +135,9 @@ public class HostReactor implements Closeable {
      * param:ServiceInfo 服务信息
      * */
     public ServiceInfo processServiceJson(String json) {
+        //新的服务信息
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
+        //从内存获取旧的服务
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
@@ -145,15 +147,12 @@ public class HostReactor implements Closeable {
         boolean changed = false;
 
         if (oldService != null) {
-
+            //LastRefTime是Unix时间戳
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime() + ", new-t: "
                     + serviceInfo.getLastRefTime());
             }
-
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-
-
             //旧的服务地址
             Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
             for (Instance host : oldService.getHosts()) {
@@ -223,7 +222,7 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
-                //
+                //放入事件分发器当中
                 eventDispatcher.serviceChanged(serviceInfo);
                 //写入磁盘缓存
                 DiskCache.write(serviceInfo, cacheDir);

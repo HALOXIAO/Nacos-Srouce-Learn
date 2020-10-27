@@ -51,16 +51,16 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author nkorange
  */
 public class FailoverReactor implements Closeable {
-    
+
     private final String failoverDir;
-    
+
     private final HostReactor hostReactor;
-    
+
     private final ScheduledExecutorService executorService;
-    
+
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
-        //存放故障转移服务实例的位置
+        //备份存放位置
         this.failoverDir = cacheDir + "/failover";
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -84,31 +84,32 @@ public class FailoverReactor implements Closeable {
      * 用于判断是否处于故障切换状态
      * */
     private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
-    
+
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
-    
+
     /**
      * Init.
      */
     public void init() {
-        //5s
+        //5s执行一次
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
-        //24h
+        //24h执行一次
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
-        
+
         // backup file on startup if failover directory is empty.
         executorService.schedule(new Runnable() {
             @Override
             public void run() {
                 try {
                     File cacheDir = new File(failoverDir);
-                    
+                    //如果备份存放目录无法创建
                     if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                         throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                     }
-                    
+
                     File[] files = cacheDir.listFiles();
+                    //如果备份存放目录是空的，就先把内存中的服务信息持久化到磁盘先
                     if (files == null || files.length <= 0) {
                         //将内存中的服务实例(HostReactor存储的)缓存持久化到硬盘中
                         new DiskFileWriter().run();
@@ -116,11 +117,11 @@ public class FailoverReactor implements Closeable {
                 } catch (Throwable e) {
                     NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                 }
-                
+
             }
         }, 10000L, TimeUnit.MILLISECONDS);
     }
-    
+
     /**
      * Add day.
      *
@@ -134,7 +135,7 @@ public class FailoverReactor implements Closeable {
         startDT.add(Calendar.DAY_OF_MONTH, num);
         return startDT.getTime();
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
@@ -144,10 +145,9 @@ public class FailoverReactor implements Closeable {
     }
 
     class SwitchRefresher implements Runnable {
-
         long lastModifiedMillis = 0L;
         //定期做容灾备份，查看缓存目录下的/failover/00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00文件，看是否有改变，
-        // 有改变就要设置相应的属性来表示是否开启故障转移模式
+        //有改变就要设置相应的属性来表示是否开启故障转移模式
         @Override
         public void run() {
             try {//是否有故障转移文件
@@ -184,7 +184,7 @@ public class FailoverReactor implements Closeable {
                         switchParams.put("failover-mode", "false");
                     }
                 }
-                
+
             } catch (Throwable e) {
                 NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             }
@@ -192,40 +192,43 @@ public class FailoverReactor implements Closeable {
     }
 
     class FailoverFileReader implements Runnable {
-        //读取磁盘中的备份资料，并将其写入内存的缓存中
+        //读取磁盘中服务的备份信息，并将其写入内存的缓存中
         @Override
         public void run() {
+            //暂存读取的资料
             Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
-            
+
             BufferedReader reader = null;
             try {
-                
                 File cacheDir = new File(failoverDir);
+                //如果缓存目录不存在且创建失败
                 if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                     throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                 }
-                
+
                 File[] files = cacheDir.listFiles();
                 if (files == null) {
                     return;
                 }
-                
+
                 for (File file : files) {
+
                     if (!file.isFile()) {
                         continue;
                     }
-
+                    //如果是00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00这项文件
                     if (file.getName().equals(UtilAndComs.FAILOVER_SWITCH)) {
                         continue;
                     }
-                    
+
                     ServiceInfo dom = new ServiceInfo(file.getName());
-                    
+
                     try {
+                        //获取磁盘中存放的服务实例数据
                         String dataString = ConcurrentDiskUtil
                                 .getFileContent(file, Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
-                        
+
                         String json;
                         if ((json = reader.readLine()) != null) {
                             try {
@@ -234,7 +237,7 @@ public class FailoverReactor implements Closeable {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
                         }
-                        
+
                     } catch (Exception e) {
                         NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
@@ -253,8 +256,9 @@ public class FailoverReactor implements Closeable {
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
-            
+
             if (domMap.size() > 0) {
+                //正式放到内存中
                 serviceMap = domMap;
             }
         }
@@ -263,7 +267,6 @@ public class FailoverReactor implements Closeable {
 
     //定时将内存中的服务实例(HostReactor存储的)缓存持久化到硬盘中
     class DiskFileWriter extends TimerTask {
-        //00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00
         @Override
         public void run() {
             //获取内存中的服务实例缓存
@@ -277,24 +280,24 @@ public class FailoverReactor implements Closeable {
                         .equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
                     continue;
                 }
-                
+
                 DiskCache.write(serviceInfo, failoverDir);
             }
         }
     }
-    
+
     public boolean isFailoverSwitch() {
         return Boolean.parseBoolean(switchParams.get("failover-mode"));
     }
-    
+
     public ServiceInfo getService(String key) {
         ServiceInfo serviceInfo = serviceMap.get(key);
-        
+
         if (serviceInfo == null) {
             serviceInfo = new ServiceInfo();
             serviceInfo.setName(key);
         }
-        
+
         return serviceInfo;
     }
 }

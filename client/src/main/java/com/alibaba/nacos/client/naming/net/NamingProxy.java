@@ -524,21 +524,19 @@ public class NamingProxy implements Closeable {
 
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
 
+        //nacosDomain：当serverList size为1时，nacosDomain会被设置为服务ip地址
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
 
         NacosException exception = new NacosException();
-
         if (servers != null && !servers.isEmpty()) {
-
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
-            //按次序向每个服务器发送注册实例信息,直到遍历完服务或者有服务正常响应
+            //依次向每个服务器发送注册实例信息,直到遍历完服务或者有服务正常响应
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);
                 try {
-                    //
                     return callServer(api, params, body, server, method);
                 } catch (NacosException e) {
                     exception = e;
@@ -549,7 +547,6 @@ public class NamingProxy implements Closeable {
                 index = (index + 1) % servers.size();
             }
         }
-
         if (StringUtils.isNotBlank(nacosDomain)) {
             for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
                 try {
@@ -562,13 +559,11 @@ public class NamingProxy implements Closeable {
                 }
             }
         }
-
         NAMING_LOGGER.error("request: {} failed, servers: {}, code: {}, msg: {}", api, servers, exception.getErrCode(),
             exception.getErrMsg());
 
         throw new NacosException(exception.getErrCode(),
             "failed to req API:" + api + " after all servers(" + servers + ") tried: " + exception.getMessage());
-
     }
 
     private List<String> getServerList() {

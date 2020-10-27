@@ -158,7 +158,7 @@ public class EventDispatcher implements Closeable {
 
                 ServiceInfo serviceInfo = null;
                 try {
-                    //5分钟执行一次
+                    //5分钟执行获取
                     serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
