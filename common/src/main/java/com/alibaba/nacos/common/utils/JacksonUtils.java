@@ -39,14 +39,14 @@ import java.lang.reflect.Type;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class JacksonUtils {
-    
+
     static ObjectMapper mapper = new ObjectMapper();
-    
+
     static {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(Include.NON_NULL);
     }
-    
+
     /**
      * Object to json string.
      *
@@ -56,12 +56,12 @@ public final class JacksonUtils {
      */
     public static String toJson(Object obj) {
         try {
-                return mapper.writeValueAsString(obj);
+            return mapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new NacosSerializationException(obj.getClass(), e);
         }
     }
-    
+
     /**
      * Object to json string byte array.
      *
@@ -76,7 +76,7 @@ public final class JacksonUtils {
             throw new NacosSerializationException(obj.getClass(), e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -93,7 +93,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(cls, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -110,7 +110,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -127,7 +127,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -144,7 +144,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -161,7 +161,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(cls, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -178,7 +178,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -195,7 +195,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(typeReference.getClass(), e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
@@ -212,7 +212,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(type, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Jackson {@link JsonNode}.
      *
@@ -227,7 +227,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Register sub type for child class.
      *
@@ -237,7 +237,7 @@ public final class JacksonUtils {
     public static void registerSubtype(Class<?> clz, String type) {
         mapper.registerSubtypes(new NamedType(clz, type));
     }
-    
+
     /**
      * Create a new empty Jackson {@link ObjectNode}.
      *
@@ -246,7 +246,7 @@ public final class JacksonUtils {
     public static ObjectNode createEmptyJsonNode() {
         return new ObjectNode(mapper.getNodeFactory());
     }
-    
+
     /**
      * Create a new empty Jackson {@link ArrayNode}.
      *
@@ -255,7 +255,7 @@ public final class JacksonUtils {
     public static ArrayNode createEmptyArrayNode() {
         return new ArrayNode(mapper.getNodeFactory());
     }
-    
+
     /**
      * Parse object to Jackson {@link JsonNode}.
      *
@@ -265,7 +265,7 @@ public final class JacksonUtils {
     public static JsonNode transferToJsonNode(Object obj) {
         return mapper.valueToTree(obj);
     }
-    
+
     /**
      * construct java type -> Jackson Java Type.
      *
