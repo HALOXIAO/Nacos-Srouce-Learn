@@ -440,6 +440,7 @@ public class HostReactor implements Closeable {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
                 if (delayTime > 0) {
+
                     executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
                 }
             }
