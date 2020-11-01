@@ -131,9 +131,9 @@ public class HostReactor implements Closeable {
 
     /**
      * 更新服务实例
-     *
+     * <p>
      * param:ServiceInfo 服务信息
-     * */
+     */
     public ServiceInfo processServiceJson(String json) {
         //新的服务信息
         ServiceInfo serviceInfo = JacksonUtils.toObj(json, ServiceInfo.class);
@@ -415,7 +415,7 @@ public class HostReactor implements Closeable {
                     delayTime = DEFAULT_DELAY;
                     return;
                 }
-                    //判断是否被server推送了信息
+                //判断是否被server推送了信息
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     updateServiceNow(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
