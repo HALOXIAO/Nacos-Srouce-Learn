@@ -162,15 +162,11 @@ public class EventDispatcher implements Closeable {
                     serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
-
                 if (serviceInfo == null) {
                     continue;
                 }
-
                 try {
                     List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
-
-
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());

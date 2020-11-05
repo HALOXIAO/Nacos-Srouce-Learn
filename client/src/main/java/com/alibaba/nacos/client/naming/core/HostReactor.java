@@ -323,15 +323,17 @@ public class HostReactor implements Closeable {
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
+
         }
 
         synchronized (futureMap) {
             if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
                 return;
             }
-
+            //执行一次获取服务实例信息
             ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters));
             futureMap.put(ServiceInfo.getKey(serviceName, clusters), future);
+
         }
     }
 
@@ -440,7 +442,6 @@ public class HostReactor implements Closeable {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
                 if (delayTime > 0) {
-
                     executor.schedule(this, delayTime, TimeUnit.MILLISECONDS);
                 }
             }

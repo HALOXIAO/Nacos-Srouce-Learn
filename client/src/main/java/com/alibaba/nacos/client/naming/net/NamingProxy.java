@@ -126,7 +126,7 @@ public class NamingProxy implements Closeable {
 
     /**
      * 初始化ServerList刷新任务
-     * */
+     */
     private void initRefreshTask() {
 
         this.executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {

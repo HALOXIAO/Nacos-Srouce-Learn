@@ -212,7 +212,6 @@ public class BeatReactor implements Closeable {
 
                     }
                 }
-                System.out.println("200");
             } catch (NacosException ex) {
                 NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, code: {}, msg: {}",
                     JacksonUtils.toJson(beatInfo), ex.getErrCode(), ex.getErrMsg());
