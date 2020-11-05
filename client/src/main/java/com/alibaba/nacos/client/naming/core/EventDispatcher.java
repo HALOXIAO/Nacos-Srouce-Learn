@@ -48,7 +48,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class EventDispatcher implements Closeable {
 
-    private ExecutorService executor = null;
+    private ExecutorService  executor = null;
 
     private final BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
