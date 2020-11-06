@@ -57,7 +57,7 @@ public class HostReactor implements Closeable {
     private static final long DEFAULT_DELAY = 1000L;
 
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
-
+    //存放已经更新过的服务
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
     //内存的服务实例缓存
@@ -320,7 +320,7 @@ public class HostReactor implements Closeable {
      * @param serviceName service name
      * @param clusters    clusters
      */
-    public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
+    public void  scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
 
